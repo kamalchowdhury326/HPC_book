@@ -55,12 +55,77 @@ void Print_vector(char* title, double y[], double m);
 /* Parallel function */
 void Omp_mat_vect(double A[], double x[], double y[],
       int m, int n, int thread_count);
+void file_read(char* path,double B[],int m, int n){
+   // Specify the path to the input file
+    //const char *path = "/scratch/ualmkc001/A.txt";
+    
+    // Open the file in read mode
+    FILE *file1 = fopen(path, "r");
 
+    // Check if the file opened successfully
+    if (file1 == NULL) {
+        printf("Failed to open the file.\n");
+        return ;
+    }
+
+    
+    for(int i=0;i<m;i++){
+       for(int j=0;j<n;j++){
+          // Write something to the file
+         //fscanf(file, "%lf",&B[i*n+j]);
+         if (fscanf(file1, "%lf", &B[i*n+j]) != 1) {
+            printf("Error reading from file.\n");
+            fclose(file1);
+            return ;
+         }
+       }
+       
+    }
+    // Close the file
+    fclose(file1);
+   #ifndef DEBUG1
+   for(int i=0;i<m;i++){
+       for(int j=0;j<n;j++){
+          // Write something to the file
+         printf(" %lf ",B[i*n+j]);
+       }
+       printf("\n");
+    }
+   #endif
+
+}
+void file_write(char* path, double A[], int m, int n){
+   // Specify the full path where you want to create the file
+    //const char *path = "/scratch/ualmkc001/filename.txt";
+    
+    // Open file in write mode
+    FILE *file = fopen(path, "w");
+
+    // Check if file creation is successful
+    if (file == NULL) {
+        printf("Failed to create the file.\n");
+        return ;
+    }
+   
+    for(int i=0;i<m;i++){
+       for(int j=0;j<n;j++){
+          // Write something to the file
+         fprintf(file, " %lf ",A[i*n+j]);
+       }
+       fprintf(file, "\n");
+    }
+    
+
+    // Close the file
+    fclose(file);
+    printf("File created successfully at %s\n", path);
+}
 /*------------------------------------------------------------------*/
 int main(int argc, char* argv[]) {
    int     thread_count;
    int     m, n;
    double* A;
+   //double* B;
    double* x;
    double* y;
 
@@ -69,6 +134,7 @@ int main(int argc, char* argv[]) {
    A = malloc(m*n*sizeof(double));
    x = malloc(n*sizeof(double));
    y = malloc(m*sizeof(double));
+   //B = malloc(m*n*sizeof(double));
    
  # ifdef DEBUG
       Read_matrix("Enter the matrix", A, m, n);
@@ -77,17 +143,29 @@ int main(int argc, char* argv[]) {
       Print_vector("We read", x, n);
  # else
       Gen_matrix(A, m, n);
-      Print_matrix("We generated", A, m, n); 
+      file_write("/scratch/ualmkc001/A.txt",A,m,n);
+      file_read("/scratch/ualmkc001/A.txt",A,m,n);
+      // Print_matrix("We generated", A, m, n); 
       Gen_vector(x, n);
-      Print_vector("We generated", x, n); 
+      file_write("/scratch/ualmkc001/x.txt",x,n,1);
+      file_read("/scratch/ualmkc001/x.txt",x,n,1);
+      // Print_vector("We generated", x, n); 
  # endif
-
+   
+   
+    
+    
+    
+    
    Omp_mat_vect(A, x, y, m, n, thread_count);
 
 #  ifdef DEBUG
       Print_vector("The product is", y, m);
 #  else
-      Print_vector("The product is", y, m); 
+      // Print_vector("The product is", y, m); 
+      file_write("/scratch/ualmkc001/y1.txt",y,m,1);
+      file_read("/scratch/ualmkc001/y1.txt",y,m,1);
+
 #  endif
 
    free(A);
@@ -149,10 +227,17 @@ void Read_matrix(char* prompt, double A[], int m, int n) {
  * Out arg:  A
  */
 void Gen_matrix(double A[], int m, int n) {
+   # ifdef DEBUG1
+   int i, j;
+   for (i = 0; i < m; i++)
+      for (j = 0; j < n; j++)
+         A[i*n+j] = 1.0;
+   #else
    int i, j;
    for (i = 0; i < m; i++)
       for (j = 0; j < n; j++)
          A[i*n+j] = random()/((double) RAND_MAX);
+   #endif
 }  /* Gen_matrix */
 
 /*------------------------------------------------------------------
@@ -163,9 +248,16 @@ void Gen_matrix(double A[], int m, int n) {
  * Out arg:  A
  */
 void Gen_vector(double x[], int n) {
+   # ifdef DEBUG1
+   int i;
+   for (i = 0; i < n; i++)
+      x[i] = 2.0;
+   #else
    int i;
    for (i = 0; i < n; i++)
       x[i] = random()/((double) RAND_MAX);
+   #endif
+
 }  /* Gen_vector */
 
 /*------------------------------------------------------------------
