@@ -22,7 +22,7 @@ int main(int argc, char* argv[]) {
 
 #  pragma omp parallel num_threads(thread_count) \
       private(x)
-   {
+   { 
       int my_rank = omp_get_thread_num();
       printf("Thread %d > before initialization, x = %d\n", 
             my_rank, x);

@@ -8,8 +8,7 @@
  *     generate A and x.  There is some optimization.
  *
  * Compile:  
- *    gcc -g -Wall -fopenmp -o omp_mat_vect_rand_split 
- *          omp_mat_vect_rand_split.c 
+ *    gcc -g -Wall -fopenmp -o omp_mat_vect_rand_split omp_mat_vect_rand_split.c 
  * Run:
  *    ./omp_mat_vect_rand_split <thread_count> <m> <n>
  *
@@ -38,7 +37,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <omp.h>
-#include "timer.h"
+// #include "timer.h"
 
 /* Serial functions */
 void Get_args(int argc, char* argv[], int* thread_count_p, 
@@ -54,7 +53,71 @@ void Print_vector(char* title, double y[], double m);
 /* Parallel function */
 void Omp_mat_vect(double A[], double x[], double y[],
       int m, int n, int thread_count);
+void file_read(char* path,double B[],int m, int n){
+   // Specify the path to the input file
+    //const char *path = "/scratch/ualmkc001/A.txt";
+    
+    // Open the file in read mode
+    FILE *file1 = fopen(path, "r");
 
+    // Check if the file opened successfully
+    if (file1 == NULL) {
+        printf("Failed to open the file.\n");
+        return ;
+    }
+
+    
+    for(int i=0;i<m;i++){
+       for(int j=0;j<n;j++){
+          // Write something to the file
+         //fscanf(file, "%lf",&B[i*n+j]);
+         if (fscanf(file1, "%lf", &B[i*n+j]) != 1) {
+            printf("Error reading from file.\n");
+            fclose(file1);
+            return ;
+         }
+       }
+       
+    }
+    // Close the file
+    fclose(file1);
+   #ifndef DEBUG1
+   for(int i=0;i<m;i++){
+       for(int j=0;j<n;j++){
+          // Write something to the file
+         printf(" %lf ",B[i*n+j]);
+       }
+       printf("\n");
+    }
+   #endif
+
+}
+void file_write(char* path, double A[], int m, int n){
+   // Specify the full path where you want to create the file
+    //const char *path = "/scratch/ualmkc001/filename.txt";
+    
+    // Open file in write mode
+    FILE *file = fopen(path, "w");
+
+    // Check if file creation is successful
+    if (file == NULL) {
+        printf("Failed to create the file.\n");
+        return ;
+    }
+   
+    for(int i=0;i<m;i++){
+       for(int j=0;j<n;j++){
+          // Write something to the file
+         fprintf(file, " %lf ",A[i*n+j]);
+       }
+       fprintf(file, "\n");
+    }
+    
+
+    // Close the file
+    fclose(file);
+    printf("File created successfully at %s\n", path);
+}
 /*------------------------------------------------------------------*/
 int main(int argc, char* argv[]) {
    int     thread_count;
@@ -77,7 +140,11 @@ int main(int argc, char* argv[]) {
 #  else
    Gen_matrix(A, m, n);
 /* Print_matrix("We generated", A, m, n); */
+   file_write("/scratch/ualmkc001/A_split.txt",A,m,n);
+   file_read("/scratch/ualmkc001/A_split.txt",A,m,n);
    Gen_vector(x, n);
+   file_write("/scratch/ualmkc001/x_split.txt",x,n,1);
+   file_read("/scratch/ualmkc001/x_split.txt",x,n,1);
 /* Print_vector("We generated", x, n); */
 #  endif
 
@@ -87,6 +154,8 @@ int main(int argc, char* argv[]) {
    Print_vector("The product is", y, m);
 #  else
 /* Print_vector("The product is", y, m); */
+   file_write("/scratch/ualmkc001/y_split.txt",y,m,1);
+   file_read("/scratch/ualmkc001/y_split.txt",y,m,1);
 #  endif
 
    free(A);
@@ -148,10 +217,17 @@ void Read_matrix(char* prompt, double A[], int m, int n) {
  * Out arg:  A
  */
 void Gen_matrix(double A[], int m, int n) {
+   # ifdef DEBUG1
+   int i, j;
+   for (i = 0; i < m; i++)
+      for (j = 0; j < n; j++)
+         A[i*n+j] = 1.0;
+   #else
    int i, j;
    for (i = 0; i < m; i++)
       for (j = 0; j < n; j++)
          A[i*n+j] = random()/((double) RAND_MAX);
+   #endif
 }  /* Gen_matrix */
 
 /*------------------------------------------------------------------
@@ -162,9 +238,15 @@ void Gen_matrix(double A[], int m, int n) {
  * Out arg:  A
  */
 void Gen_vector(double x[], int n) {
+   # ifdef DEBUG1
+   int i;
+   for (i = 0; i < n; i++)
+      x[i] = 2.0;
+   #else
    int i;
    for (i = 0; i < n; i++)
       x[i] = random()/((double) RAND_MAX);
+   #endif
 }  /* Gen_vector */
 
 /*------------------------------------------------------------------
@@ -193,7 +275,8 @@ void Omp_mat_vect(double A[], double x[], double y[],
    int i, j;
    double start, finish, elapsed, temp;
 
-   GET_TIME(start);
+   //GET_TIME(start);
+   start = omp_get_wtime();
 #  pragma omp parallel for num_threads(thread_count)  \
       default(none) private(i, j, temp)  shared(A, x, y, m, n)
    for (i = 0; i < m; i++) {
@@ -204,7 +287,8 @@ void Omp_mat_vect(double A[], double x[], double y[],
       }
    }
 
-   GET_TIME(finish);
+   // GET_TIME(finish);
+   finish = omp_get_wtime();
    elapsed = finish - start;
    printf("Elapsed time = %e seconds\n", elapsed);
 
