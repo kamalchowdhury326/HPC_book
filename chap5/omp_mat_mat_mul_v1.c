@@ -1,5 +1,5 @@
 /* File:     
- *     omp_mat_mat_mul.c 
+ *     omp_mat_mat_mul_v1.c 
  *
  *
  * Purpose:  
@@ -17,9 +17,9 @@
  *     Elapsed time for the computation
  *
  * Compile:  
- *    gcc -g -Wall -o omp_mat_mat_mul omp_mat_mat_mul.c -fopenmp
+ *    gcc -g -Wall -o omp_mat_mat_mul_v1 omp_mat_mat_mul_v1.c -fopenmp
  * Usage:
- *    omp_mat_mat_mul <thread_count> <m> <n>
+ *    omp_mat_mat_mul_v1 <thread_count> <m> <n>
  *
  * Notes:  
  *     1.  Storage for A, B, C is dynamically allocated.
@@ -286,15 +286,17 @@ void Omp_mat_vect(double A[], double B[], double C[],
    int i, j,k;
    double start, finish, elapsed;
    double x=0;
+   int tid;
+   //int half_thread=thread_count/2;
    start = omp_get_wtime();
-   for(int phase=0;phase<2;phase++){
+   for(int phase=0;phase<10;phase++){
         #  pragma omp parallel for num_threads(thread_count) \
-        default(none) private(i,j,k,x)  shared(A, B, C, m, n,phase)
+        default(none) private(i,j,k,x,tid)  shared(A, B, C, m, n,phase)
         for (i = 0; i < n; i++) {
-        //#pragma omp parallel for default(none) private(j,k,x)  shared(A, B, C,i, n) //num_threads(thread_count)
+        //#pragma omp parallel for default(none) private(j,k,x,tid)  shared(A, B, C,i, n,phase)
             for (j = 0; j < n; j++){
                 x=0;
-                
+                tid = omp_get_thread_num();
                 for (k = 0; k < n; k++){
                         x += A[i*n+k]*B[k*n+j];
                         //printf("x=%lf i=%d j=%d k=%d\n",x,i,j,k);
@@ -302,7 +304,7 @@ void Omp_mat_vect(double A[], double B[], double C[],
                     
                 C[i*n+j]=x;
                 
-                printf("phase=%d C[%d]=%lf \n",phase,i*n+j,C[i*n+j]);
+                printf("phase=%d tid=%d C[%d]=%lf \n",phase,tid,i*n+j,C[i*n+j]);
                 }
             
             

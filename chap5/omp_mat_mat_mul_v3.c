@@ -1,5 +1,5 @@
 /* File:     
- *     omp_mat_mat_mul.c 
+ *     omp_mat_mat_mul_v3.c 
  *
  *
  * Purpose:  
@@ -17,9 +17,9 @@
  *     Elapsed time for the computation
  *
  * Compile:  
- *    gcc -g -Wall -o omp_mat_mat_mul omp_mat_mat_mul.c -fopenmp
+ *    gcc -g -Wall -o omp_mat_mat_mul_v3 omp_mat_mat_mul_v3.c -fopenmp
  * Usage:
- *    omp_mat_mat_mul <thread_count> <m> <n>
+ *    omp_mat_mat_mul_v3 <thread_count> <m> <n>
  *
  * Notes:  
  *     1.  Storage for A, B, C is dynamically allocated.
@@ -286,34 +286,63 @@ void Omp_mat_vect(double A[], double B[], double C[],
    int i, j,k;
    double start, finish, elapsed;
    double x=0;
+   int phase,tid=0;
    start = omp_get_wtime();
-   for(int phase=0;phase<2;phase++){
-        #  pragma omp parallel for num_threads(thread_count) \
-        default(none) private(i,j,k,x)  shared(A, B, C, m, n,phase)
-        for (i = 0; i < n; i++) {
-        //#pragma omp parallel for default(none) private(j,k,x)  shared(A, B, C,i, n) //num_threads(thread_count)
-            for (j = 0; j < n; j++){
+   int half_thread=thread_count/2;
+   
+   for(phase=0;phase<1;phase++){
+       //#pragma omp  parallel default(none) private(i,j,k,x,tid)  shared(A, B, C, m, n,phase)
+   #  pragma omp parallel num_threads(thread_count) default(none) \
+   private(i,j,k,x,tid)  shared(A, B, C, m, n,half_thread,phase)
+   {
+        tid = omp_get_thread_num();
+        int p=tid/2;
+        int q=tid%2;
+
+        int i_partition=m/half_thread;
+        int i_start=p*i_partition;
+        int i_end=i_start+i_partition;
+      //   int reminder=m%half_thread;
+      //   if(tid==half_thread-1){
+      //      i_end+=reminder;
+      //   }
+        for (i = i_start; i < i_end; i++) {
+         int j_partition=n/q;
+         int j_start=q*j_partition;
+         int j_end=j_start+j_partition;
+         // int reminder=n%2;
+         // if(tid==1){
+         //    j_end+=reminder;
+         // }
+          printf("tid=%d j_start=%d j_end=%d \n",tid,j_start,j_end);
+            for (j = j_start; j < j_end; j++){
                 x=0;
                 
                 for (k = 0; k < n; k++){
                         x += A[i*n+k]*B[k*n+j];
-                        //printf("x=%lf i=%d j=%d k=%d\n",x,i,j,k);
+                       // printf("x=%lf i=%d j=%d k=%d\n",x,i,j,k);
                 }
                     
                 C[i*n+j]=x;
                 
-                printf("phase=%d C[%d]=%lf \n",phase,i*n+j,C[i*n+j]);
+                
                 }
             
             
         }
-        //#pragma omp barrier
-        for(i=0;i<n;i++){
-            for(j=0;j<n;j++){
-                A[i*n+j]=C[i*n+j];
+      printf("phase=%d tid=%d C[%d]=%lf \n",phase,tid,i*n+j,C[i*n+j]);
+   }
+   
+        
+      #pragma omp barrier
+
+        for(int ii=0;ii<n;ii++){
+            for(int jj=0;jj<n;jj++){
+                A[ii*n+jj]=C[ii*n+jj];
             }
         }
-   }
+        
+  }
    finish = omp_get_wtime();
    elapsed = finish - start;
    printf("Elapsed time = %e seconds\n", elapsed);

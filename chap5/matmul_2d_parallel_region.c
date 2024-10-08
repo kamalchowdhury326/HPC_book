@@ -97,7 +97,12 @@ void matmul2(double **a, double **b, double ***c, int N, int P, int Q)
        if you like to make referencing easier to understand */
        
     #pragma omp parallel default(none) shared(a,b,c,N,P,Q) private(i,j,k,sum) num_threads(P*Q)
-    {
+    {// 4 threads 18*18
+
+    // 0th threads 4 0-3
+    //1st thread 4 4-7
+    //2nd thread 4 8-11
+    //3rd thread 6 12-17
 	int tid = omp_get_thread_num();
 	int p = tid / Q;
 	int q = tid % Q;
@@ -105,6 +110,7 @@ void matmul2(double **a, double **b, double ***c, int N, int P, int Q)
 	int istart = p * myM;
 	int iend = istart + myM;
 	if (p == P-1) iend = N;
+  printf("tid=%d istart=%d iend=%d\n",tid,istart,iend);
 	for (i=istart; i<iend; i++) {
 		int myN = N / Q;
 		int jstart = q * myN;
