@@ -1,0 +1,32 @@
+setting asax scratch directory
+ 
+============================================================
+=====         Summary of your script job               =====
+============================================================
+  The script file is: script.sh
+  The time limit is 60:00:00 HH:MM:SS.
+  The target directory is: /home/ualmkc001/HPC_book/chap5
+  The working directory is:  /scratch-local/ualmkc001.scriptshSCRIPT.114148.asax-pbs1
+  The memory limit is: 1gb
+  The job will start running after: 202410101030.35
+  Job Name: scriptshSCRIPT
+  Queue: -q small
+  Constraints: 
+  Using  1  cores on master node  asax002.asc.edu
+  Node list:  asax002.asc.edu
+  Cores:  1
+  Command typed:
+/scripts/run_script script.sh     
+  Queue submit command:
+qsub -q small -j oe -N scriptshSCRIPT -a 202410101030.35 -r n -M mhchowdhury@crimson.ua.edu -l walltime=60:00:00 -l select=ncpus=1:mem=1000mb 
+icx: remark: Note that use of '-g' without any optimization-level option will turn off most compiler optimizations similar to use of '-O0'; use '-Rno-debug-disables-optimization' to disable this remark [-Rdebug-disables-optimization]
+Elapsed time for size=500, iterations=500, threads=1, Takes 3.422200e+02 seconds
+File created successfully at /scratch/ualmkc001/C
+Elapsed time for size=500, iterations=500, threads=2, Takes 3.343396e+02 seconds
+File created successfully at /scratch/ualmkc001/C
+Elapsed time for size=500, iterations=500, threads=20, Takes 4.596127e+02 seconds
+File created successfully at /scratch/ualmkc001/C
+diff: C.500.500.1.txt: No such file or directory
+diff: C.500.500.2.txt: No such file or directory
+diff: C.500.500.2.txt: No such file or directory
+diff: C.500.500.20.txt: No such file or directory

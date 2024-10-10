@@ -19,7 +19,7 @@
  * Compile:  
  *    gcc -g -Wall -o omp_mat_mat_mul_v3 omp_mat_mat_mul_v3.c -fopenmp
  * Usage:
- *    omp_mat_mat_mul_v3 <thread_count> <m> <n>
+ *    omp_mat_mat_mul_v3 <thread_count_x><thread_count_y> <m> <n>
  *
  * Notes:  
  *     1.  Storage for A, B, C is dynamically allocated.
@@ -42,7 +42,7 @@
 #include <omp.h>
 
 /* Serial functions */
-void Get_args(int argc, char* argv[], int* thread_count_p, 
+void Get_args(int argc, char* argv[], int* thread_count_x, int* thread_count_y, 
       int* m_p, int* n_p);
 void Usage(char* prog_name);
 void Gen_matrix(double A[], int m, int n);
@@ -54,7 +54,7 @@ void Print_vector(char* title, double y[], double m);
 
 /* Parallel function */
 void Omp_mat_vect(double A[], double x[], double y[],
-      int m, int n, int thread_count);
+      int m, int n, int thread_count_x,int thread_count_y);
 void file_read(char* path,double B[],int m, int n){
    // Specify the path to the input file
     //const char *path = "/scratch/ualmkc001/A.txt";
@@ -122,14 +122,14 @@ void file_write(char* path, double A[], int m, int n){
 }
 /*------------------------------------------------------------------*/
 int main(int argc, char* argv[]) {
-   int     thread_count;
+   int     thread_count_x, thread_count_y;
    int     m, n;
    double* A;
    double* B;
    double* C;
    //double* y;
 
-   Get_args(argc, argv, &thread_count, &m, &n);
+   Get_args(argc, argv, &thread_count_x,&thread_count_y, &m, &n);
 
    A = malloc(m*n*sizeof(double));
    B = malloc(m*n*sizeof(double));
@@ -157,7 +157,7 @@ int main(int argc, char* argv[]) {
     
     
     
-   Omp_mat_vect(A, B, C, m, n, thread_count);
+   Omp_mat_vect(A, B, C, m, n, thread_count_x,thread_count_y);
 
 #  ifdef DEBUG
       Print_matrix("The product is", C, m,n);
@@ -182,14 +182,16 @@ int main(int argc, char* argv[]) {
  * In args:   argc, argv
  * Out args:  thread_count_p, m_p, n_p
  */
-void Get_args(int argc, char* argv[], int* thread_count_p, 
+void Get_args(int argc, char* argv[], int* thread_count_x, int* thread_count_y,
       int* m_p, int* n_p)  {
 
-   if (argc != 4) Usage(argv[0]);
-   *thread_count_p = strtol(argv[1], NULL, 10);
-   *m_p = strtol(argv[2], NULL, 10);
-   *n_p = strtol(argv[3], NULL, 10);
-   if (*thread_count_p <= 0 || *m_p <= 0 || *n_p <= 0) Usage(argv[0]);
+   if (argc != 5) Usage(argv[0]);
+   *thread_count_x = strtol(argv[1], NULL, 10);
+   *thread_count_y = strtol(argv[2], NULL, 10);
+
+   *m_p = strtol(argv[3], NULL, 10);
+   *n_p = strtol(argv[4], NULL, 10);
+   if (*thread_count_x <= 0 || *thread_count_y <= 0 || *m_p <= 0 || *n_p <= 0) Usage(argv[0]);
 
 }  /* Get_args */
 
@@ -282,39 +284,38 @@ void Read_vector(char* prompt, double x[], int n) {
  * Out arg:   y
  */
 void Omp_mat_vect(double A[], double B[], double C[],
-      int m, int n, int thread_count) {
+      int m, int n, int thread_count_x,int thread_count_y) {
    int i, j,k;
    double start, finish, elapsed;
    double x=0;
    int phase,tid=0;
    start = omp_get_wtime();
-   int half_thread=thread_count/2;
+  // int half_thread=thread_count/2;
    
    for(phase=0;phase<1;phase++){
        //#pragma omp  parallel default(none) private(i,j,k,x,tid)  shared(A, B, C, m, n,phase)
-   #  pragma omp parallel num_threads(thread_count) default(none) \
-   private(i,j,k,x,tid)  shared(A, B, C, m, n,half_thread,phase)
+   #  pragma omp parallel num_threads(thread_count_x*thread_count_y) default(none) \
+   private(i,j,k,x,tid)  shared(A, B, C, m, n,phase,thread_count_x,thread_count_y)
    {
         tid = omp_get_thread_num();
-        int p=tid/2;
-        int q=tid%2;
-
-        int i_partition=m/half_thread;
-        int i_start=p*i_partition;
-        int i_end=i_start+i_partition;
-      //   int reminder=m%half_thread;
-      //   if(tid==half_thread-1){
-      //      i_end+=reminder;
-      //   }
+        int p=tid/thread_count_y;
+        int q=tid%thread_count_y;
+        int row_part=m/thread_count_x;
+        int i_start=p*row_part;
+        int i_end=i_start+row_part;
+        int reminder=m%thread_count_x;
+        if(p==thread_count_x-1){
+           i_end+=reminder;
+        }
         for (i = i_start; i < i_end; i++) {
-         int j_partition=n/q;
-         int j_start=q*j_partition;
-         int j_end=j_start+j_partition;
-         // int reminder=n%2;
-         // if(tid==1){
-         //    j_end+=reminder;
-         // }
-          printf("tid=%d j_start=%d j_end=%d \n",tid,j_start,j_end);
+         int column_part=n/thread_count_y;
+         int j_start=q*column_part;
+         int j_end=j_start+column_part;
+         int reminder=n%thread_count_y;
+         if(tid==thread_count_y-1){
+            j_end+=reminder;
+         }
+          printf("tid=%d i_start=%d i_end=%d j_start=%d j_end=%d \n",tid,i_start,i_end,j_start,j_end);
             for (j = j_start; j < j_end; j++){
                 x=0;
                 
@@ -335,7 +336,6 @@ void Omp_mat_vect(double A[], double B[], double C[],
    
         
       #pragma omp barrier
-
         for(int ii=0;ii<n;ii++){
             for(int jj=0;jj<n;jj++){
                 A[ii*n+jj]=C[ii*n+jj];

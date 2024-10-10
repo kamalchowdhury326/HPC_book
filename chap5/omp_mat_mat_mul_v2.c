@@ -290,7 +290,6 @@ void Omp_mat_vect(double A[], double B[], double C[],
    start = omp_get_wtime();
    
    for(phase=0;phase<10;phase++){
-       //#pragma omp  parallel default(none) private(i,j,k,x,tid)  shared(A, B, C, m, n,phase)
    #  pragma omp parallel num_threads(thread_count) default(none) \
    private(i,j,k,x,tid)  shared(A, B, C, m, n,thread_count,phase)
    {
@@ -304,7 +303,6 @@ void Omp_mat_vect(double A[], double B[], double C[],
         }
         for (i = i_start; i < i_end; i++) {
            
-        
             for (j = 0; j < n; j++){
                 x=0;
                 

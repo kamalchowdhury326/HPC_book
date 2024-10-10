@@ -1,0 +1,18 @@
+ 
+============================================================
+=====     Queued job information at submit time        =====
+============================================================
+  The submitted file is: script.sh
+  The time limit is 60:00:00 HH:MM:SS.
+  The target directory is: /home/ualmkc001/HPC_book/chap5
+  The memory limit is: 1gb
+  The job will start running after: 202410101004.47
+  Job Name: scriptshSCRIPT
+  Queue: -q small
+  Constraints: 
+  Command typed:
+/scripts/run_script script.sh     
+  Queue submit command:
+qsub -q small -j oe -N scriptshSCRIPT -a 202410101004.47 -r n -M mhchowdhury@crimson.ua.edu -l walltime=60:00:00 -l select=ncpus=1:mem=1000mb 
+  Job number: 114140
+ 

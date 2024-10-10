@@ -1,0 +1,23 @@
+setting asax scratch directory
+ 
+============================================================
+=====         Summary of your script job               =====
+============================================================
+  The script file is: script.sh
+  The time limit is 24:00:00 HH:MM:SS.
+  The target directory is: /home/ualmkc001/HPC_book/chap5
+  The working directory is:  /scratch-local/ualmkc001.scriptshSCRIPT.113989.asax-pbs1
+  The memory limit is: 20gb
+  The job will start running after: 202410091741.16
+  Job Name: scriptshSCRIPT
+  Queue: -q benchmark
+  Constraints: 
+  Using  20  cores on master node  asax021.asc.edu
+  Node list:  asax021.asc.edu asax021.asc.edu asax021.asc.edu asax021.asc.edu asax021.asc.edu asax021.asc.edu asax021.asc.edu asax021.asc.edu asax021.asc.edu asax021.asc.edu asax021.asc.edu asax021.asc.edu asax021.asc.edu asax021.asc.edu asax021.asc.edu asax021.asc.edu asax021.asc.edu asax021.asc.edu asax021.asc.edu asax021.asc.edu
+  Cores:  20
+  Command typed:
+/scripts/run_script script.sh     
+  Queue submit command:
+qsub -q benchmark -j oe -N scriptshSCRIPT -a 202410091741.16 -r n -M mhchowdhury@crimson.ua.edu -l walltime=24:00:00 -l select=ncpus=20:mpiprocs=20:mem=20000mb 
+Elapsed time for size=500, iterations=5000, threads=8, Takes 3.338642e+02 seconds
+File created successfully at /scratch/ualmkc001/C.txt

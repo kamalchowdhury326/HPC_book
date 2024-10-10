@@ -7,8 +7,9 @@
 * contiguous 2D-matrices and use traditional array indexing.                  *
 * It also illustrate the use of gettime to measure wall clock time.           *
 *                                                                             *
-* To Compile: gcc -Wall -O -fopenmp matmul_2d_parallel_region.c  -o matmul_2d_parallel_region             * 
-* To run: ./matmul_2d_parallel_region <size> <P> <Q>                                              *
+* To Compile:                                                                 *
+* gcc -Wall -O -fopenmp matmul_2d_parallel_regionV1.1.c  -o matmul_2d_parallel_regionV1.1             * 
+* To run: ./matmul_2d_parallel_regionV1.1 <size> <P> <Q>                                              *
 *                                                                             *
 *  Author: Purushotham Bangalore                                              *
 *  Email: puri@uab.edu                                                        *
@@ -95,35 +96,50 @@ void matmul2(double **a, double **b, double ***c, int N, int P, int Q)
     /* You could use: double **out = *c; 
        and replace (*c) below with out, 
        if you like to make referencing easier to understand */
-       
-    #pragma omp parallel default(none) shared(a,b,c,N,P,Q) private(i,j,k,sum) num_threads(P*Q)
+    int step;
+    #pragma omp parallel default(none) shared(a,b,c,N,P,Q) private(i,j,k,sum,step) num_threads(P*Q)
     {
-    int tid = omp_get_thread_num();
-    int p = tid / Q;
-    int q = tid % Q;
-    int myM = N / P;
-    int istart = p * myM;
-    int iend = istart + myM;
-    if (p == P-1) iend = N;
-  #ifdef DEBUG0
-    printf("tid=%d istart=%d iend=%d\n",tid,istart,iend);
-  #endif
-    for (i=istart; i<iend; i++) {
-      int myN = N / Q;
-      int jstart = q * myN;
-      int jend = jstart + myN;
-      if (q == Q-1) jend = N;
-#ifdef DEBUG0
-		printf("tid=%d[p,q]=[%d,%d]: {istart,iend}:{%d,%d} {jstart,jend}:{%d,%d}\n", tid, p, q, istart, iend, jstart, jend);
-#endif
+    for(step=0;step<2;step++){
 
-		for (j=jstart; j<jend; j++) {
-			sum = 0.0;
-			for (k=0; k<N; k++)
-			    sum += a[i][k]*b[k][j];
-			(*c)[i][j] = sum;
-		}
-	}
+        int tid = omp_get_thread_num();
+        int p = tid / Q;
+        int q = tid % Q;
+        int myM = N / P;
+        int istart = p * myM;
+        int iend = istart + myM;
+        if (p == P-1) iend = N;
+      #ifdef DEBUG0
+        printf("tid=%d istart=%d iend=%d\n",tid,istart,iend);
+      #endif
+        for (i=istart; i<iend; i++) {
+          int myN = N / Q;
+          int jstart = q * myN;
+          int jend = jstart + myN;
+          if (q == Q-1) jend = N;
+    #ifdef DEBUG0
+        printf("tid=%d[p,q]=[%d,%d]: {istart,iend}:{%d,%d} {jstart,jend}:{%d,%d}\n", tid, p, q, istart, iend, jstart, jend);
+    #endif
+
+        for (j=jstart; j<jend; j++) {
+          sum = 0.0;
+          for (k=0; k<N; k++)
+              sum += a[i][k]*b[k][j];
+          (*c)[i][j] = sum;
+        }
+      }
+
+      #pragma omp barrier 
+      //a=(*c);
+      #pragma omp for
+      for(int ii=0;ii<N;ii++){
+          for(int jj=0;jj<N;jj++){
+            a[ii][jj]=(*c)[ii][jj];
+          }
+        }
+
+    }
+
+    
     }
 }
 

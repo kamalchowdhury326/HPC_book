@@ -1,5 +1,5 @@
 /* File:     
- *     omp_mat_mat_mul.c 
+ *     omp_mat_mat_mul_v2.1.c 
  *
  *
  * Purpose:  
@@ -17,9 +17,9 @@
  *     Elapsed time for the computation
  *
  * Compile:  
- *    gcc -g -Wall -o omp_mat_mat_mul omp_mat_mat_mul.c -fopenmp
+ *    gcc -g -Wall -o omp_mat_mat_mul_v2.1 omp_mat_mat_mul_v2.1.c -fopenmp
  * Usage:
- *    omp_mat_mat_mul <thread_count> <m> <n>
+ *    omp_mat_mat_mul_v2.1 <thread_count> <m> <n>
  *
  * Notes:  
  *     1.  Storage for A, B, C is dynamically allocated.
@@ -53,7 +53,7 @@ void Print_matrix(char* title, double A[], int m, int n);
 void Print_vector(char* title, double y[], double m);
 
 /* Parallel function */
-void Omp_mat_vect(double A[], double x[], double y[],
+void Omp_mat_mat_mul(double A[], double x[], double y[],
       int m, int n, int thread_count);
 void file_read(char* path,double B[],int m, int n){
    // Specify the path to the input file
@@ -83,7 +83,7 @@ void file_read(char* path,double B[],int m, int n){
     }
     // Close the file
     fclose(file1);
-   #ifndef DEBUG1
+   #ifdef DEBUG1
    for(int i=0;i<m;i++){
        for(int j=0;j<n;j++){
           // Write something to the file
@@ -157,7 +157,7 @@ int main(int argc, char* argv[]) {
     
     
     
-   Omp_mat_vect(A, B, C, m, n, thread_count);
+   Omp_mat_mat_mul(A, B, C, m, n, thread_count);
 
 #  ifdef DEBUG
       Print_matrix("The product is", C, m,n);
@@ -276,49 +276,70 @@ void Read_vector(char* prompt, double x[], int n) {
 
 
 /*------------------------------------------------------------------
- * Function:  Omp_mat_vect
+ * Function:  Omp_mat_mat_mul
  * Purpose:   Multiply an mxn matrix by an nx1 column vector
  * In args:   A, x, m, n, thread_count
  * Out arg:   y
  */
-void Omp_mat_vect(double A[], double B[], double C[],
+void Omp_mat_mat_mul(double A[], double B[], double C[],
       int m, int n, int thread_count) {
    int i, j,k;
    double start, finish, elapsed;
    double x=0;
+   int phase;
    start = omp_get_wtime();
-   for(int phase=0;phase<10;phase++){
-        #  pragma omp parallel for num_threads(thread_count) \
-        default(none) private(i,j,k,x)  shared(A, B, C, m, n,phase)
+   #  pragma omp parallel num_threads(thread_count) default(none) \
+   private(i,j,k,x,phase)  shared(A, B, C, m, n,thread_count)
+   for(phase=0;phase<10;phase++){
+   
+   {
+      #ifdef DEBUG1
+      int tid = omp_get_thread_num();
+      #endif
+      
+        #pragma omp for
         for (i = 0; i < n; i++) {
-        //#pragma omp parallel for default(none) private(j,k,x)  shared(A, B, C,i, n) //num_threads(thread_count)
+           
             for (j = 0; j < n; j++){
                 x=0;
                 
                 for (k = 0; k < n; k++){
                         x += A[i*n+k]*B[k*n+j];
-                        //printf("x=%lf i=%d j=%d k=%d\n",x,i,j,k);
+                      // printf("x=%lf i=%d j=%d k=%d\n",x,i,j,k);
                 }
-                    
+                  
                 C[i*n+j]=x;
-                
-                printf("phase=%d C[%d]=%lf \n",phase,i*n+j,C[i*n+j]);
+                #ifdef DEBUG1
+                printf("phase=%d (i,j)=[%d,%d] tid=%d x=%lf C[%d]=%lf \n",phase,i,j,tid,x,i*n+j,C[i*n+j]);
+                #endif
                 }
             
             
         }
-        //#pragma omp barrier
-        for(i=0;i<n;i++){
-            for(j=0;j<n;j++){
-                A[i*n+j]=C[i*n+j];
+
+   }
+        
+     //  #pragma omp barrier
+       #pragma omp sections
+       {
+          for(int ii=0;ii<n;ii++){
+            for(int jj=0;jj<n;jj++){
+                A[ii*n+jj]=C[ii*n+jj];
             }
         }
-   }
+
+       }
+     
+        
+     
+        
+        
+  }
    finish = omp_get_wtime();
    elapsed = finish - start;
    printf("Elapsed time = %e seconds\n", elapsed);
 
-}  /* Omp_mat_vect */
+}  /* Omp_mat_mat_mul */
 
 
 /*------------------------------------------------------------------

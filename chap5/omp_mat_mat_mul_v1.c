@@ -287,13 +287,13 @@ void Omp_mat_vect(double A[], double B[], double C[],
    double start, finish, elapsed;
    double x=0;
    int tid;
-   //int half_thread=thread_count/2;
+   
    start = omp_get_wtime();
+   
    for(int phase=0;phase<10;phase++){
         #  pragma omp parallel for num_threads(thread_count) \
         default(none) private(i,j,k,x,tid)  shared(A, B, C, m, n,phase)
         for (i = 0; i < n; i++) {
-        //#pragma omp parallel for default(none) private(j,k,x,tid)  shared(A, B, C,i, n,phase)
             for (j = 0; j < n; j++){
                 x=0;
                 tid = omp_get_thread_num();
